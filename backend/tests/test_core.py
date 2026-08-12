@@ -128,6 +128,24 @@ def test_agent_payload_includes_questions_and_schema():
     assert payload["result_schema"]["properties"]["years_exp"]["type"] == ["number", "string"]
 
 
+class FakeSession:
+    """Just enough session for the agent helpers: they only ever `scalar` the
+    binding lookup and `commit`."""
+
+    def __init__(self, agent_id: str | None):
+        self._agent_id = agent_id
+        self.added: list = []
+
+    async def scalar(self, _stmt):
+        return self._agent_id
+
+    def add(self, obj):
+        self.added.append(obj)
+
+    async def commit(self):
+        pass
+
+
 async def test_agent_update_carries_persona_name(monkeypatch):
     """Regression: Hunar 422s an update that sends `voice_persona` or
     `language` without `persona_name`, so the existing one must be carried
@@ -148,8 +166,8 @@ async def test_agent_update_carries_persona_name(monkeypatch):
     monkeypatch.setattr(HunarClient, "get_agent", fake_get)
     monkeypatch.setattr(HunarClient, "update_agent", fake_update)
 
-    job = Job(title="Backend Engineer", questions=[], hunar_agent_id="agent-1")
-    await sync_agent(None, job)
+    job = Job(id="job-1", title="Backend Engineer", questions=[])
+    await sync_agent(FakeSession("agent-1"), job)
 
     assert sent["persona_name"] == "Shreya"
     assert sent["voice_persona"] == "NEHA"
@@ -171,7 +189,7 @@ async def test_agent_update_drops_voice_when_no_persona_to_preserve(monkeypatch)
     monkeypatch.setattr(HunarClient, "get_agent", fake_get)
     monkeypatch.setattr(HunarClient, "update_agent", fake_update)
 
-    await sync_agent(None, Job(title="QA", questions=[], hunar_agent_id="agent-1"))
+    await sync_agent(FakeSession("agent-1"), Job(id="job-2", title="QA", questions=[]))
 
     assert "voice_persona" not in sent and "language" not in sent
     assert sent["result_schema"]["properties"]["interested"]["type"] == "boolean"

@@ -130,6 +130,25 @@ class CandidateCreate(BaseModel):
             raise ValueError(str(exc)) from exc
 
 
+class CandidateUpdate(BaseModel):
+    """Editing an existing contact. Mainly used to add the phone number a
+    people-search provider withheld."""
+
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    phone: str | None = Field(default=None, min_length=1, max_length=32)
+    email: str | None = None
+
+    @field_validator("phone")
+    @classmethod
+    def _normalize(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        try:
+            return normalize_phone(v)
+        except InvalidPhoneNumber as exc:
+            raise ValueError(str(exc)) from exc
+
+
 class CandidateOut(ApiModel):
     id: str
     job_id: str | None

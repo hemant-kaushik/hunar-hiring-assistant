@@ -16,7 +16,17 @@ import enum
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, DateTime, Enum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import (
+    JSON,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -205,6 +215,35 @@ class Call(Base):
 
     candidate: Mapped[Candidate] = relationship(back_populates="calls")
     job: Mapped[Job | None] = relationship(back_populates="calls")
+
+
+class AgentBinding(Base):
+    """Which Hunar agent handles a given (job, purpose) pair.
+
+    A role needs more than one agent: screening a candidate who applied and
+    cold-reaching someone who has never heard of the company are different
+    conversations, so they get different prompts and objectives.
+
+    This is a table rather than extra columns on `jobs` deliberately. The schema
+    is created with `create_all`, which creates new tables but never alters
+    existing ones -- adding a column would silently not apply to a database that
+    already has rows. A new table is picked up cleanly, and `backfill_agent_bindings`
+    carries over agents provisioned before this existed.
+    """
+
+    __tablename__ = "agent_bindings"
+    __table_args__ = (UniqueConstraint("job_id", "purpose", name="uq_agent_binding"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    job_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("jobs.id", ondelete="CASCADE"), index=True
+    )
+    purpose: Mapped[CallPurpose] = mapped_column(
+        Enum(CallPurpose, native_enum=False, length=32), default=CallPurpose.SCREENING
+    )
+    hunar_agent_id: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
 class WebhookEvent(Base):
