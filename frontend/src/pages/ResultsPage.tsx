@@ -13,15 +13,16 @@ import type { Call } from "../types";
  */
 export default function ResultsPage() {
   const [calls, setCalls] = useState<Call[] | null>(null);
+  const [purpose, setPurpose] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(
     () =>
       api
-        .listCalls()
+        .listCalls({ purpose: purpose || undefined })
         .then(setCalls)
         .catch((e) => setError(e.message)),
-    [],
+    [purpose],
   );
 
   useEffect(() => {
@@ -38,6 +39,21 @@ export default function ResultsPage() {
       {error && <div className="banner err">{error}</div>}
 
       <div className="panel">
+        <div className="row" style={{ marginBottom: 14 }}>
+          <label htmlFor="purpose" style={{ marginBottom: 0 }}>
+            Show
+          </label>
+          <select
+            id="purpose"
+            value={purpose}
+            onChange={(e) => setPurpose(e.target.value)}
+            style={{ width: "auto" }}
+          >
+            <option value="">All calls</option>
+            <option value="SCREENING">Screening calls</option>
+            <option value="OUTREACH">Outreach calls</option>
+          </select>
+        </div>
         {calls === null ? (
           <p className="muted">Loading…</p>
         ) : (

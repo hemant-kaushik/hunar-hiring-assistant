@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db
 from app.models import Candidate, CandidateSource, Job
-from app.schemas import CandidateCreate, CandidateOut
+from app.schemas import CandidateCreate, CandidateOut, CandidateUpdate
 
 router = APIRouter(prefix="/api/candidates", tags=["candidates"])
 
@@ -104,6 +104,25 @@ async def get_candidate(candidate_id: str, db: AsyncSession = Depends(get_db)) -
     candidate = await db.get(Candidate, candidate_id)
     if candidate is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Candidate not found")
+    return candidate
+
+
+@router.patch("/{candidate_id}", response_model=CandidateOut)
+async def update_candidate(
+    candidate_id: str, payload: CandidateUpdate, db: AsyncSession = Depends(get_db)
+) -> Candidate:
+    """Edit a contact -- in practice, supplying the phone number a people-search
+    provider would not release."""
+    candidate = await db.get(Candidate, candidate_id)
+    if candidate is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Candidate not found")
+
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        if value is not None:
+            setattr(candidate, field, value)
+
+    await db.commit()
+    await db.refresh(candidate)
     return candidate
 
 

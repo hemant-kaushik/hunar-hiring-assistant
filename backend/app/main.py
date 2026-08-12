@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.db import init_db
-from app.routers import calls, candidates, jobs, webhooks
+from app.routers import calls, candidates, jobs, sourcing, webhooks
 from app.schemas import HealthOut
 
 logging.basicConfig(
@@ -52,6 +52,7 @@ def create_app() -> FastAPI:
     app.include_router(jobs.router)
     app.include_router(candidates.router)
     app.include_router(calls.router)
+    app.include_router(sourcing.router)
     app.include_router(webhooks.router)
 
     @app.get("/api/health", response_model=HealthOut, tags=["meta"])
