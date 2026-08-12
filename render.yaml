@@ -1,0 +1,36 @@
+# Render Blueprint for the backend API.
+#
+# The frontend is a static Vite build deployed separately on Vercel (see
+# frontend/vercel.json), so only the API service lives here.
+#
+# Values marked `sync: false` are entered in the Render dashboard, never in the
+# repo -- HUNAR_API_KEY doubles as the webhook HMAC secret.
+services:
+  - type: web
+    name: hunar-hiring-assistant-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.11"
+      - key: HUNAR_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      # Set to this service's own URL once Render assigns it; Hunar posts
+      # call webhooks there.
+      - key: PUBLIC_BASE_URL
+        sync: false
+      # The deployed frontend's origin, e.g. https://<project>.vercel.app
+      - key: CORS_ORIGINS
+        sync: false
+      - key: DRY_RUN_CALLS
+        value: "false"
+      - key: WEBHOOK_SIGNATURE_REQUIRED
+        value: "true"
+      - key: ALLOWED_TEST_NUMBERS
+        sync: false
