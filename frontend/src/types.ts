@@ -31,6 +31,47 @@ export interface Candidate {
   created_at: string;
 }
 
+/** ---- Sourcing (Task 2) ---- */
+
+export interface SearchFilters {
+  titles: string[];
+  skills: string[];
+  locations: string[];
+  seniority: string[];
+  company_size?: string | null;
+  limit: number;
+}
+
+export interface ParsedJD extends SearchFilters {
+  matched_terms: string[];
+}
+
+export interface PersonResult {
+  external_id: string;
+  name: string;
+  headline: string;
+  title: string;
+  company: string;
+  location: string;
+  skills: string[];
+  linkedin_url: string | null;
+  experience_years: number | null;
+  phone: string | null;
+  email: string | null;
+  /** True with a null `phone` means the provider has a number but won't release it. */
+  has_phone: boolean;
+  has_email: boolean;
+  raw: Record<string, unknown>;
+}
+
+export interface SearchResponse {
+  results: PersonResult[];
+  source: "pdl" | "sample";
+  provider_label: string;
+  notice: string | null;
+  filters: SearchFilters;
+}
+
 export type CallStatus =
   | "PENDING"
   | "SIMULATED"
@@ -105,8 +146,18 @@ export function isAwaitingResult(call: Call): boolean {
   return Date.now() - Date.parse(call.updated_at) < RESULT_GRACE_MS;
 }
 
+/**
+ * A call the provider has queued for later, because it was requested outside
+ * permitted calling hours. Nobody is being dialled, and nothing will change for
+ * hours -- so it should neither look active nor be polled.
+ */
+export function isScheduledForLater(call: Call): boolean {
+  return call.status === "SCHEDULED" || call.status === "NOT_STARTED";
+}
+
 /** Keep refreshing while the call is live, or while its answers are still due. */
 export function needsPolling(call: Call): boolean {
+  if (isScheduledForLater(call)) return false;
   return !isCallOver(call) || isAwaitingResult(call);
 }
 

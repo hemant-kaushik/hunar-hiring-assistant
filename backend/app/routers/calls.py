@@ -17,8 +17,8 @@ from app.db import get_db
 from app.integrations.hunar import HunarError
 from app.models import Call, CallPurpose, CallStatus, Candidate
 from app.schemas import CallCreate, CallOut
-from app.services import screening
-from app.services.screening import CallNotAllowed
+from app.services import outreach, screening
+from app.services.call_pipeline import CallNotAllowed
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/calls", tags=["calls"])
@@ -75,19 +75,26 @@ async def start_call(payload: CallCreate, db: AsyncSession = Depends(get_db)) ->
     if candidate is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Candidate not found")
 
-    if payload.purpose is not CallPurpose.SCREENING:
+    if payload.purpose is CallPurpose.ATTENDANCE_CHECKIN:
         raise HTTPException(
             status.HTTP_501_NOT_IMPLEMENTED,
-            f"{payload.purpose.value} calls are not implemented yet",
+            "Attendance check-in calls are not available yet.",
         )
     if candidate.job is None:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            "This candidate is not attached to a job, so there is nothing to screen for.",
+            "This person is not attached to a role, so there is nothing to call about.",
         )
 
+    # Same pipeline either way; only the agent and the conversation differ.
+    start = (
+        outreach.start_outreach_call
+        if payload.purpose is CallPurpose.OUTREACH
+        else screening.start_screening_call
+    )
+
     try:
-        call = await screening.start_screening_call(db, candidate, candidate.job)
+        call = await start(db, candidate, candidate.job)
     except CallNotAllowed as exc:
         raise HTTPException(status.HTTP_403_FORBIDDEN, str(exc)) from exc
     except HunarError as exc:

@@ -1,4 +1,14 @@
-import type { Call, Candidate, Health, Job, ScreeningQuestion } from "./types";
+import type {
+  Call,
+  Candidate,
+  Health,
+  Job,
+  ParsedJD,
+  PersonResult,
+  ScreeningQuestion,
+  SearchFilters,
+  SearchResponse,
+} from "./types";
 
 /**
  * In dev this is empty and Vite proxies /api to the backend (see vite.config.ts).
@@ -103,16 +113,39 @@ export const api = {
   },
   deleteCandidate: (id: string) => request<void>(`/api/candidates/${id}`, { method: "DELETE" }),
 
+  updateCandidate: (id: string, body: { phone?: string; name?: string; email?: string }) =>
+    request<Candidate>(`/api/candidates/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+
+  // ---- Sourcing (Task 2) ----
+  parseJd: (jobDescription: string, limit = 5) =>
+    request<ParsedJD>("/api/sourcing/parse", {
+      method: "POST",
+      body: JSON.stringify({ job_description: jobDescription, limit }),
+    }),
+  searchPeople: (filters: SearchFilters) =>
+    request<SearchResponse>("/api/sourcing/search", {
+      method: "POST",
+      body: JSON.stringify(filters),
+    }),
+  importPeople: (jobId: string, people: PersonResult[]) =>
+    request<Candidate[]>("/api/sourcing/import", {
+      method: "POST",
+      body: JSON.stringify({ job_id: jobId, people }),
+    }),
+
   listCalls: (params: { jobId?: string; purpose?: string } = {}) => {
     const qs = new URLSearchParams();
     if (params.jobId) qs.set("job_id", params.jobId);
     if (params.purpose) qs.set("purpose", params.purpose);
     return request<Call[]>(`/api/calls/${qs.toString() ? `?${qs}` : ""}`);
   },
-  startCall: (candidateId: string) =>
+  startCall: (candidateId: string, purpose: "SCREENING" | "OUTREACH" = "SCREENING") =>
     request<Call>("/api/calls/", {
       method: "POST",
-      body: JSON.stringify({ candidate_id: candidateId, purpose: "SCREENING" }),
+      body: JSON.stringify({ candidate_id: candidateId, purpose }),
     }),
   refreshCall: (id: string) => request<Call>(`/api/calls/${id}/refresh`, { method: "POST" }),
 };
