@@ -10,6 +10,12 @@ services:
     name: hunar-hiring-assistant-api
     runtime: python
     plan: free
+    # Must match the Postgres instance's region: an internal `dpg-` hostname
+    # only resolves within one region, and a cross-region pair fails DNS
+    # lookup at startup. Neither a service nor a database can be moved after
+    # creation, so getting this wrong means recreating one of them.
+    # Left unset, Render defaults to Oregon.
+    region: singapore
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
