@@ -3,7 +3,7 @@ import type { CallStatus } from "../types";
 const TONE: Record<CallStatus, string> = {
   PENDING: "",
   SIMULATED: "warn",
-  NOT_STARTED: "warn",
+  NOT_STARTED: "live",
   SCHEDULED: "warn",
   INITIATED: "live",
   RINGING: "live",
@@ -19,7 +19,7 @@ const LABEL: Partial<Record<CallStatus, string>> = {
   IN_PROGRESS: "On call",
   NOT_CONNECTED: "No answer",
   SCHEDULED: "Queued",
-  NOT_STARTED: "Queued",
+  NOT_STARTED: "Starting",
 };
 
 /**
@@ -29,7 +29,7 @@ const LABEL: Partial<Record<CallStatus, string>> = {
  */
 const EXPLANATION: Partial<Record<CallStatus, string>> = {
   SCHEDULED: "Outside calling hours — will be placed after 8am",
-  NOT_STARTED: "Outside calling hours — will be placed after 8am",
+  NOT_STARTED: "Handing the call to the provider",
 };
 
 export function StatusPill({ status }: { status: CallStatus }) {

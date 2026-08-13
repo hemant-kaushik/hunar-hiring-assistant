@@ -152,12 +152,29 @@ export function isAwaitingResult(call: Call): boolean {
  * hours -- so it should neither look active nor be polled.
  */
 export function isScheduledForLater(call: Call): boolean {
-  return call.status === "SCHEDULED" || call.status === "NOT_STARTED";
+  return call.status === "SCHEDULED";
+}
+
+/**
+ * Created, but not yet picked up by the provider.
+ *
+ * This is a doorway on the way to RINGING, not a resting state -- every call
+ * passes through it in the second after it is placed. Excluding it from polling
+ * froze the row at its initial status for the entire call, so the dashboard
+ * only ever caught up on a manual reload. Bounded, so a call the provider never
+ * accepted stops being polled instead of hammering the API forever.
+ */
+export function isStarting(call: Call): boolean {
+  return (
+    call.status === "NOT_STARTED" &&
+    Date.now() - Date.parse(call.updated_at) < RESULT_GRACE_MS
+  );
 }
 
 /** Keep refreshing while the call is live, or while its answers are still due. */
 export function needsPolling(call: Call): boolean {
   if (isScheduledForLater(call)) return false;
+  if (call.status === "NOT_STARTED") return isStarting(call);
   return !isCallOver(call) || isAwaitingResult(call);
 }
 

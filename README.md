@@ -8,6 +8,9 @@ someone has to read.
 **Stack:** React + Vite + TypeScript · FastAPI + async SQLAlchemy · Postgres in
 production, SQLite locally.
 
+> **Just want to try it?** [docs/REVIEWER_GUIDE.md](docs/REVIEWER_GUIDE.md) walks
+> through both modules step by step, no technical background needed.
+
 ---
 
 ## The two modules

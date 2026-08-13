@@ -38,5 +38,10 @@ services:
         value: "false"
       - key: WEBHOOK_SIGNATURE_REQUIRED
         value: "true"
+      # Deliberately empty: the reviewer needs to call their own phone, and the
+      # guard is opt-in -- empty means any candidate's number is reachable.
+      # Nothing dials without an explicit click, and sourced profiles carry no
+      # number of their own, so an empty list cannot cold-call a stranger.
+      # Set it to a comma-separated list to restrict calling again.
       - key: ALLOWED_TEST_NUMBERS
-        sync: false
+        value: ""

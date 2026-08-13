@@ -416,3 +416,27 @@ code {
 .doc li {
   max-width: 70ch;
 }
+
+.doc h2 {
+  margin-top: 30px;
+}
+
+.doc h2:first-child {
+  margin-top: 0;
+}
+
+.doc h3 {
+  margin-top: 20px;
+  font-size: 15px;
+}
+
+/* Written-design tables sit inside prose, so they need the breathing room a
+   data table in a panel of its own does not. */
+.doc-table {
+  margin: 14px 0 20px;
+  max-width: 70ch;
+}
+
+.doc-table th {
+  white-space: normal;
+}
